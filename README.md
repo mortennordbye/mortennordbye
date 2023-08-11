@@ -18,7 +18,6 @@
 - 🌐 **Website:** [nordbye.it](https://nordbye.it)
 - 📞 **Phone:** +47 97902931
 - 🏠 **City:** Oslo, Norway
-- 📆 **Age:** 19
 - 🎓 **Degree:** Trade certificate as a skilled ICT service operator
 - 📧 **Email:** [morten@nordbye.it](mailto:morten@nordbye.it)
 - 💼 **Freelance:** Available
