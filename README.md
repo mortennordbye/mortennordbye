@@ -14,7 +14,6 @@
 
 ### 📌 Personal Details
 
-- 🎂 **Birthday:** 18 August 2003
 - 🌐 **Website:** [nordbye.it](https://nordbye.it)
 - 📞 **Phone:** +47 97902931
 - 🏠 **City:** Oslo, Norway
