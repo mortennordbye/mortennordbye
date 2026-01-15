@@ -11,7 +11,8 @@ This hands-on experience allows me to gain valuable expertise in cutting-edge te
 
 ## 📫 Contact & Socials
 
-- **Website:** [nordbye.it](https://nordbye.it)  
+- **Website:** [nordbye.it](https://nordbye.it) 
+- **Blog:** [blog.nordbye.it](https://blog.nordbye.it)  
 - **Location:** Oslo, Norway  
 - **Education:** Trade certificate, ICT Service Operator  
 - **Email:** [morten@nordbye.it](mailto:morten@nordbye.it)  
