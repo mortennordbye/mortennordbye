@@ -52,7 +52,11 @@ const STYLE = `
   .shimmer{animation:sweep 3.4s ease-in-out infinite}
   @keyframes sweep{0%{transform:translateX(-45%)}50%{transform:translateX(45%)}100%{transform:translateX(-45%)}}
   .pulse{animation:pulse 2.2s ease-in-out infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}`;
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .draw{stroke-dasharray:4000;stroke-dashoffset:4000;animation:draw 2.4s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .fadein{opacity:0;animation:fadein 1.2s ease-out .5s forwards}
+  @keyframes fadein{to{opacity:1}}`;
 
 /** Rounded-rect card chrome with an animated top accent line. */
 function card(t, height, inner, { accentBar = true } = {}) {
@@ -113,13 +117,8 @@ async function ghStats() {
   }
   // Aggregating stargazerCount over many nodes trips GitHub's GraphQL
   // resource limit, so counts come from GraphQL and stars from REST.
-  const query = `query($login:String!){user(login:$login){
-    followers{totalCount}
-    repositories(ownerAffiliations:OWNER, privacy:PUBLIC){totalCount}
-    contributionsCollection{totalCommitContributions}
-  }}`;
   const auth = { authorization: `bearer ${TOKEN}` };
-  try {
+  const gql = async (query) => {
     const res = await fetch("https://api.github.com/graphql", {
       method: "POST",
       headers: { ...auth, "content-type": "application/json" },
@@ -127,9 +126,20 @@ async function ghStats() {
       signal: AbortSignal.timeout(15000),
     });
     const j = await res.json();
-    const u = j?.data?.user;
-    if (!u) throw new Error(JSON.stringify(j?.errors ?? j));
+    if (!j?.data?.user) throw new Error(JSON.stringify(j?.errors ?? j));
+    return j.data.user;
+  };
 
+  try {
+    // Counts: light query. Kept separate from the calendar so the calendar's
+    // heavier node cost can't trip a resource limit on the whole thing.
+    const u = await gql(`query($login:String!){user(login:$login){
+      followers{totalCount}
+      repositories(ownerAffiliations:OWNER, privacy:PUBLIC){totalCount}
+      contributionsCollection{totalCommitContributions}
+    }}`);
+
+    // Stars via REST (aggregating stargazerCount in GraphQL trips the limit).
     let stars = null;
     try {
       const rr = await fetch(`https://api.github.com/users/${GH_USER}/repos?per_page=100&type=owner`, {
@@ -140,10 +150,28 @@ async function ghStats() {
       if (Array.isArray(repos)) stars = repos.reduce((a, x) => a + (x.stargazers_count || 0), 0);
     } catch { /* stars stay null */ }
 
+    // Contribution calendar: its own query, and non-fatal if it fails.
+    let weekly = [], contributions = null;
+    try {
+      const c = await gql(`query($login:String!){user(login:$login){
+        contributionsCollection{contributionCalendar{
+          totalContributions
+          weeks{contributionDays{contributionCount}}
+        }}
+      }}`);
+      const cal = c.contributionsCollection.contributionCalendar;
+      weekly = cal.weeks.map((w) => w.contributionDays.reduce((a, d) => a + d.contributionCount, 0));
+      contributions = cal.totalContributions;
+    } catch (e) {
+      console.warn(`! contribution calendar failed (${e.message}) — graph skipped`);
+    }
+
     return {
       followers: u.followers.totalCount,
       repos: u.repositories.totalCount,
       commits: u.contributionsCollection.totalCommitContributions,
+      contributions,
+      weekly,
       stars,
     };
   } catch (e) {
@@ -259,14 +287,51 @@ function statsCard(stats) {
     ["commits (1y)", fmt(stats?.commits)],
     ["followers", fmt(stats?.followers)],
   ];
-  return emit("stats", 132, (t) => {
+  const weekly = stats?.weekly ?? [];
+
+  return emit("stats", 254, (t) => {
     const tileW = (W - 80) / tiles.length;
     const tilesSvg = tiles.map(([label, val], i) => {
       const x = 40 + i * tileW;
       return `${tspan(x, 86, val, { size: 26, weight: 700, fill: t.accent, font: MONO })}
         ${eyebrow(x, 108, label, t)}`;
     }).join("");
-    return `${eyebrow(40, 40, "github activity", t)}${tilesSvg}`;
+
+    // contribution area chart (weekly totals, last 12 months)
+    const x0 = 40, chartW = W - 80, base = 232, chartH = 66;
+    const max = Math.max(1, ...weekly);
+    const n = weekly.length;
+    const pts = weekly.map((v, i) => {
+      const x = n <= 1 ? x0 : x0 + (i * chartW) / (n - 1);
+      const y = base - (v / max) * chartH;
+      return [Math.round(x), Math.round(y)];
+    });
+    const line = pts.map((p) => p.join(",")).join(" ");
+    const area = pts.length
+      ? `M${pts[0][0]},${base} L${line.split(" ").join(" L")} L${pts.at(-1)[0]},${base} Z`
+      : "";
+    const last = pts.at(-1);
+    const graph = pts.length
+      ? `<defs>
+           <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+             <stop offset="0" stop-color="${t.accent}" stop-opacity="0.34"/>
+             <stop offset="1" stop-color="${t.accent}" stop-opacity="0"/>
+           </linearGradient>
+         </defs>
+         <line x1="${x0}" y1="${base}" x2="${x0 + chartW}" y2="${base}" stroke="${t.line}"/>
+         <path class="fadein" d="${area}" fill="url(#area)"/>
+         <polyline class="draw" points="${line}" fill="none" stroke="url(#accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+         <circle class="pulse" cx="${last[0]}" cy="${last[1]}" r="3.5" fill="${t.accent3}"/>`
+      : tspan(x0, base - 20, "contribution history unavailable", { size: 12, fill: t.faint });
+
+    return `
+      ${eyebrow(40, 40, "github activity", t)}
+      ${tilesSvg}
+      <line x1="40" y1="130" x2="${W - 40}" y2="130" stroke="${t.line}"/>
+      ${eyebrow(40, 152, "contributions · last 12 months", t)}
+      ${tspan(W - 40, 152, `${fmt(stats?.contributions)} total`, { size: 12, weight: 600, fill: t.muted, font: MONO, anchor: "end" })}
+      ${graph}
+    `;
   });
 }
 
