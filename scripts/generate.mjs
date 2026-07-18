@@ -534,34 +534,58 @@ async function getLighthouse() {
 // SMIL sweep would leave the ring empty for static/reduced-motion renders); the
 // card's reveal handles motion.
 function lighthouseCard(lh) {
-  const metrics = [
-    ["Performance", lh?.performance],
-    ["Accessibility", lh?.accessibility],
-    ["Best Practices", lh?.bestPractices],
-    ["SEO", lh?.seo],
+  const label = (u) => (u || "").replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  // New shape: { generatedAt, sites: [{url, performance, ...}] }. Fall back to
+  // the old single-site shape, then to placeholders for both sites.
+  const sites = lh?.sites?.length
+    ? lh.sites
+    : lh?.performance != null
+      ? [lh]
+      : [{ url: "https://nordbye.it/" }, { url: "https://blog.nordbye.it/" }];
+
+  const cols = [
+    ["Performance", "performance"],
+    ["Accessibility", "accessibility"],
+    ["Best Practices", "bestPractices"],
+    ["SEO", "seo"],
   ];
-  return emit("lighthouse", 172, (t) => {
+  const top = 78, rowH = 60;
+  const height = top + sites.length * rowH;
+
+  return emit("lighthouse", height, (t) => {
     const scoreColor = (v) =>
       v == null ? t.faint : v >= 90 ? t.accent3 : v >= 50 ? t.warn : "#e5484d";
-    const r = 30, cy = 92, C = 2 * Math.PI * r;
-    const slot = (W - 80) / metrics.length;
-    const rings = metrics.map(([label, v], i) => {
-      const cx = Math.round(40 + slot * i + slot / 2);
-      const c = scoreColor(v);
-      const arc = C * ((v ?? 0) / 100);
-      return `
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${t.line}" stroke-width="6"/>
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="6"
-          stroke-linecap="round" stroke-dasharray="${arc.toFixed(2)} ${C.toFixed(2)}"
-          transform="rotate(-90 ${cx} ${cy})"/>
-        ${tspan(cx, cy + 6, v == null ? "—" : `${v}`, { size: 21, weight: 700, fill: t.fg, anchor: "middle", font: MONO })}
-        ${tspan(cx, cy + r + 26, label, { size: 12, weight: 500, fill: t.muted, anchor: "middle" })}`;
+    const x0 = 190, r = 22, C = 2 * Math.PI * r;
+    const slot = (W - 40 - x0) / cols.length;
+    const colX = (i) => Math.round(x0 + slot * i + slot / 2);
+
+    const headers = cols.map(([lab], i) =>
+      tspan(colX(i), 58, lab.toUpperCase(), { size: 11, weight: 600, fill: t.faint, font: MONO, anchor: "middle" })
+    ).join("");
+
+    const rows = sites.map((s, ri) => {
+      const cy = top + ri * rowH + 20;
+      const rings = cols.map(([, key], i) => {
+        const v = s[key];
+        const cx = colX(i);
+        const c = scoreColor(v);
+        const arc = C * ((v ?? 0) / 100);
+        return `
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${t.line}" stroke-width="5"/>
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="5"
+            stroke-linecap="round" stroke-dasharray="${arc.toFixed(2)} ${C.toFixed(2)}"
+            transform="rotate(-90 ${cx} ${cy})"/>
+          ${tspan(cx, cy + 5, v == null ? "—" : `${v}`, { size: 16, weight: 700, fill: t.fg, anchor: "middle", font: MONO })}`;
+      }).join("");
+      return `${tspan(40, cy + 5, label(s.url), { size: 14, weight: 600, fill: t.fg })}${rings}`;
     }).join("");
+
     const stamp = lh?.generatedAt ? `measured ${ago(lh.generatedAt)}` : "measured on GitHub CI";
     return `
-      ${eyebrow(40, 34, "lighthouse · nordbye.it", t)}
+      ${eyebrow(40, 34, "lighthouse", t)}
       ${tspan(W - 40, 34, stamp, { size: 12, fill: t.muted, font: MONO, anchor: "end" })}
-      ${rings}`;
+      ${headers}
+      ${rows}`;
   });
 }
 

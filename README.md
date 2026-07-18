@@ -32,7 +32,7 @@ Off the clock I run a six-node Talos Kubernetes cluster at home, reconciled from
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/lighthouse-dark.svg" />
-  <img alt="Lighthouse scores for nordbye.it: Performance, Accessibility, Best Practices, SEO" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/lighthouse.svg" width="100%" />
+  <img alt="Lighthouse scores for nordbye.it and blog.nordbye.it: Performance, Accessibility, Best Practices, SEO" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/lighthouse.svg" width="100%" />
 </picture>
 
 <a href="https://blog.nordbye.it">
