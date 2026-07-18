@@ -44,11 +44,6 @@ Read more on the blog: [blog.nordbye.it](https://blog.nordbye.it)
   <img alt="Core stack proficiency" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/stack.svg" width="100%" />
 </picture>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/github-snake-dark.svg" />
-  <img alt="Contribution graph snake" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/github-snake.svg" width="100%" />
-</picture>
-
 ---
 
 Portfolio and case studies at [nordbye.it](https://nordbye.it) · Writing at [blog.nordbye.it](https://blog.nordbye.it)
