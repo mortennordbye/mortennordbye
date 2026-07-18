@@ -37,8 +37,6 @@ Off the clock I run a six-node Talos Kubernetes cluster at home, reconciled from
   </picture>
 </a>
 
-Read more on the blog: [blog.nordbye.it](https://blog.nordbye.it)
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/oss-dark.svg" />
   <img alt="Open-source merged contributions: traefik, blowfish, ghcertified" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/oss.svg" width="100%" />
