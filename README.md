@@ -13,7 +13,7 @@
 
 I build and run automated, secure infrastructure for regulated industries. The work is Azure platforms, Kubernetes on AKS and on-prem Talos, GitOps with ArgoCD, and Terraform-based CI/CD. I'm currently a Cloud Engineer at Orange Business, where I took over architect responsibility on a betting-platform Azure migration and moved roughly 30 microservices onto AKS.
 
-Off the clock I run a six-node Talos Kubernetes cluster at home, reconciled from Git. The cards below read live from an API on [nordbye.it](https://nordbye.it), so the cluster status, the GitHub stats, and the latest posts from [blog.nordbye.it](https://blog.nordbye.it) stay current on their own.
+Off the clock I run a six-node Talos Kubernetes cluster at home, reconciled from Git. Nothing on this page is hand-maintained. The cards below regenerate on a schedule from my portfolio API at [nordbye.it](https://nordbye.it), which is the source of truth for my profile, so the cluster status, GitHub stats, and latest posts from [blog.nordbye.it](https://blog.nordbye.it) stay current on their own.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/infra-dark.svg" />
