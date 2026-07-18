@@ -30,6 +30,11 @@ Off the clock I run a six-node Talos Kubernetes cluster at home, reconciled from
   <img alt="GitHub activity: public repos, stars, commits, followers" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/stats.svg" width="100%" />
 </picture>
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/lighthouse-dark.svg" />
+  <img alt="Lighthouse scores for nordbye.it: Performance, Accessibility, Best Practices, SEO" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/lighthouse.svg" width="100%" />
+</picture>
+
 <a href="https://blog.nordbye.it">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/blog-dark.svg" />

@@ -514,25 +514,78 @@ function openSourceCard(oss) {
   });
 }
 
+// Lighthouse scores for nordbye.it, measured weekly by the homelab's Lighthouse
+// CI workflow (on real GitHub runners) and published to its lighthouse-data
+// branch. Fetched here so the card refreshes on its own.
+async function getLighthouse() {
+  const url = "https://raw.githubusercontent.com/mortennordbye/homelab/lighthouse-data/lighthouse.json";
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`${res.status}`);
+    return await res.json();
+  } catch (e) {
+    console.warn(`! lighthouse.json failed (${e.message}) — card uses placeholders`);
+    return null;
+  }
+}
+
+// Four score rings (Lighthouse's own colour convention: green >=90, amber
+// 50-89, red <50). Arcs are static so the score is always visible (a drawn-in
+// SMIL sweep would leave the ring empty for static/reduced-motion renders); the
+// card's reveal handles motion.
+function lighthouseCard(lh) {
+  const metrics = [
+    ["Performance", lh?.performance],
+    ["Accessibility", lh?.accessibility],
+    ["Best Practices", lh?.bestPractices],
+    ["SEO", lh?.seo],
+  ];
+  return emit("lighthouse", 172, (t) => {
+    const scoreColor = (v) =>
+      v == null ? t.faint : v >= 90 ? t.accent3 : v >= 50 ? t.warn : "#e5484d";
+    const r = 30, cy = 92, C = 2 * Math.PI * r;
+    const slot = (W - 80) / metrics.length;
+    const rings = metrics.map(([label, v], i) => {
+      const cx = Math.round(40 + slot * i + slot / 2);
+      const c = scoreColor(v);
+      const arc = C * ((v ?? 0) / 100);
+      return `
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${t.line}" stroke-width="6"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="6"
+          stroke-linecap="round" stroke-dasharray="${arc.toFixed(2)} ${C.toFixed(2)}"
+          transform="rotate(-90 ${cx} ${cy})"/>
+        ${tspan(cx, cy + 6, v == null ? "—" : `${v}`, { size: 21, weight: 700, fill: t.fg, anchor: "middle", font: MONO })}
+        ${tspan(cx, cy + r + 26, label, { size: 12, weight: 500, fill: t.muted, anchor: "middle" })}`;
+    }).join("");
+    const stamp = lh?.generatedAt ? `measured ${ago(lh.generatedAt)}` : "measured on GitHub CI";
+    return `
+      ${eyebrow(40, 34, "lighthouse · nordbye.it", t)}
+      ${tspan(W - 40, 34, stamp, { size: 12, fill: t.muted, font: MONO, anchor: "end" })}
+      ${rings}`;
+  });
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 mkdirSync(OUT, { recursive: true });
 
 const si = await loadSI();
-const [profile, infra, blog, stats, oss] = await Promise.all([
+const [profile, infra, blog, stats, oss, lighthouse] = await Promise.all([
   getJSON("/api/v1/profile", { name: "Morten Victor Nordbye" }),
   getJSON("/api/v1/infra", { source: "snapshot", nodes: { ready: 6, total: 6 } }),
   getJSON("/api/v1/blog", { posts: [] }),
   ghStats(),
   ossRepos(),
+  getLighthouse(),
 ]);
 
 headerCard(profile);
 infraCard(infra);
 deliveryCard(infra, si);
 statsCard(stats);
+lighthouseCard(lighthouse);
 blogCard(blog);
 openSourceCard(oss);
 certsCard(profile);
 stackCard(si);
 
-console.log(`✓ wrote SVGs to ${OUT}/ (header, infra, delivery, stats, blog, oss, certs, stack ×2 themes)`);
+console.log(`✓ wrote SVGs to ${OUT}/ (header, infra, delivery, stats, lighthouse, blog, oss, certs, stack ×2 themes)`);
