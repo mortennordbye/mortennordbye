@@ -382,12 +382,22 @@ function luminance(hex) {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
 }
 
-async function stackCard() {
-  let si = null;
-  try { si = await import("simple-icons"); } catch { console.warn("! simple-icons missing — stack icons skipped"); }
+async function loadSI() {
+  try { return await import("simple-icons"); }
+  catch { console.warn("! simple-icons missing — brand icons skipped"); return null; }
+}
+function iconFor(si, slug) {
+  if (!slug) return null;
+  const key = "si" + slug[0].toUpperCase() + slug.slice(1);
+  return si?.[key] ?? ICON_FALLBACK[slug] ?? null;
+}
+function iconFill(t, hex) {
+  return luminance(hex) < 0.24 ? t.fg : luminance(hex) > 0.92 ? t.muted : `#${hex}`;
+}
+
+function stackCard(si) {
   const items = TECH.map(([label, slug]) => {
-    const key = "si" + slug[0].toUpperCase() + slug.slice(1);
-    const ic = si?.[key] ?? ICON_FALLBACK[slug];
+    const ic = iconFor(si, slug);
     return ic ? { label, hex: ic.hex, path: ic.path } : { label, hex: null, path: null };
   });
 
@@ -404,9 +414,7 @@ async function stackCard() {
     const parts = items.map((it) => {
       const w = est(it.label);
       if (cx + w > x0 + maxW) { cx = x0; cy += rowH; }
-      const fill = it.hex
-        ? (luminance(it.hex) < 0.24 ? t.fg : luminance(it.hex) > 0.92 ? t.muted : `#${it.hex}`)
-        : t.accent;
+      const fill = it.hex ? iconFill(t, it.hex) : t.accent;
       // Position with the SVG transform attribute only. A CSS transform (from
       // an animation class) would override it and collapse icons to the origin.
       const iconSvg = it.path
@@ -421,21 +429,110 @@ async function stackCard() {
   });
 }
 
+// Animated GitOps delivery pipeline + the live last-deploy status.
+function deliveryCard(infra, si) {
+  const stages = [
+    { label: "git push", slug: "git" },
+    { label: "Actions", slug: "githubactions" },
+    { label: "GHCR", slug: "github" },
+    { label: "ArgoCD", slug: "argo" },
+    { label: "Talos", slug: null },
+  ];
+  const live = infra && infra.source !== "snapshot" && infra.generatedAt;
+  const build = infra?.build, deployedAt = infra?.deployedAt;
+  const sync = infra?.argocd?.sync, health = infra?.argocd?.health;
+
+  emit("delivery", 170, (t) => {
+    const n = stages.length, cy = 84, m = 18;
+    const nx = (i) => 40 + m + (i * (W - 80 - 2 * m)) / (n - 1);
+    const line = `<line x1="${nx(0)}" y1="${cy}" x2="${nx(n - 1)}" y2="${cy}" stroke="${t.line}" stroke-width="2"/>`;
+    // pulses flowing through the pipeline (SMIL, so it plays on GitHub)
+    const dots = [0, 1, 2].map((k) =>
+      `<circle r="3.5" cy="${cy}" fill="${t.accent}">
+        <animate attributeName="cx" values="${nx(0)};${nx(n - 1)}" dur="3s" begin="${k}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0" dur="3s" begin="${k}s" repeatCount="indefinite"/>
+      </circle>`).join("");
+    const nodes = stages.map((s, i) => {
+      const x = nx(i), ic = iconFor(si, s.slug);
+      const glyph = ic
+        ? `<g transform="translate(${x - 9},${cy - 9}) scale(0.75)"><path d="${ic.path}" fill="${iconFill(t, ic.hex)}"/></g>`
+        : `<g transform="translate(${x - 8},${cy - 8})"><rect y="0" width="16" height="4" rx="1" fill="${t.fg}"/><rect y="6" width="16" height="4" rx="1" fill="${t.fg}"/><rect y="12" width="16" height="4" rx="1" fill="${t.fg}"/></g>`;
+      return `<circle cx="${x}" cy="${cy}" r="18" fill="${t.surface}" stroke="${t.line}"/>${glyph}
+        ${tspan(x, cy + 38, s.label, { size: 12, weight: 500, fill: t.fg, anchor: "middle" })}`;
+    }).join("");
+    const status = live ? `live · ${ago(infra.generatedAt)}` : "snapshot";
+    const statusW = status.length * 6.6 + 14;
+    const deploy = `build ${build ?? "—"} · deployed ${ago(deployedAt) || "—"} · ArgoCD ${sync ?? "—"}${health ? " · " + health : ""}`;
+    return `
+      ${eyebrow(40, 34, "gitops delivery", t)}
+      <circle class="pulse" cx="${W - 40 - statusW}" cy="30" r="4" fill="${live ? t.ok : t.warn}"/>
+      ${tspan(W - 40, 34, status, { size: 12, fill: t.muted, font: MONO, anchor: "end" })}
+      ${line}${dots}${nodes}
+      <line x1="40" y1="132" x2="${W - 40}" y2="132" stroke="${t.line}"/>
+      ${tspan(40, 154, deploy, { size: 12.5, fill: t.muted, font: MONO })}
+    `;
+  });
+}
+
+// Curated public OSS contributions (work/customer repos are deliberately
+// excluded — the portfolio anonymizes those). Star counts fetched live.
+const STAR = "M8 .6l2.2 4.6 5.1.5-3.8 3.4 1.1 5L8 12.9 3.4 15l1.1-5L.7 5.7l5.1-.5z";
+const OSS = [
+  { repo: "traefik/traefik", note: "Gateway API: multi-cert listeners (v3.7.0)" },
+  { repo: "nunocoracao/blowfish", note: "Hugo theme that powers my blog" },
+  { repo: "FidelusAleksander/ghcertified", note: "GitHub certification practice tool" },
+];
+async function ossRepos() {
+  const auth = TOKEN ? { authorization: `bearer ${TOKEN}` } : {};
+  return Promise.all(OSS.map(async (o) => {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${o.repo}`, {
+        headers: { ...auth, accept: "application/vnd.github+json" },
+        signal: AbortSignal.timeout(15000),
+      });
+      const j = await r.json();
+      return { ...o, stars: typeof j.stargazers_count === "number" ? j.stargazers_count : null };
+    } catch { return { ...o, stars: null }; }
+  }));
+}
+function openSourceCard(oss) {
+  const rowH = 44;
+  const fmt = (n) => (n == null ? "—" : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`);
+  emit("oss", 78 + oss.length * rowH, (t) => {
+    const rows = oss.map((o, i) => {
+      const y = 86 + i * rowH;
+      const divider = i < oss.length - 1
+        ? `<line x1="40" y1="${y + 26}" x2="${W - 40}" y2="${y + 26}" stroke="${t.line}"/>` : "";
+      return `
+        ${tspan(40, y, o.repo, { size: 15, weight: 600, fill: t.accent, font: MONO })}
+        ${tspan(40, y + 18, o.note, { size: 12.5, fill: t.muted })}
+        <g transform="translate(${W - 114},${y - 13})"><path d="${STAR}" fill="${t.accent3}"/></g>
+        ${tspan(W - 40, y - 1, fmt(o.stars), { size: 15, weight: 700, fill: t.fg, font: MONO, anchor: "end" })}
+        ${divider}`;
+    }).join("");
+    return `${eyebrow(40, 40, "open source · merged contributions", t)}${rows}`;
+  });
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 mkdirSync(OUT, { recursive: true });
 
-const [profile, infra, blog, stats] = await Promise.all([
+const si = await loadSI();
+const [profile, infra, blog, stats, oss] = await Promise.all([
   getJSON("/api/v1/profile", { name: "Morten Victor Nordbye" }),
   getJSON("/api/v1/infra", { source: "snapshot", nodes: { ready: 6, total: 6 } }),
   getJSON("/api/v1/blog", { posts: [] }),
   ghStats(),
+  ossRepos(),
 ]);
 
 headerCard(profile);
 infraCard(infra);
-blogCard(blog);
+deliveryCard(infra, si);
 statsCard(stats);
+blogCard(blog);
+openSourceCard(oss);
 certsCard(profile);
-await stackCard();
+stackCard(si);
 
-console.log(`✓ wrote SVGs to ${OUT}/ (header, infra, blog, stats, certs, stack ×2 themes)`);
+console.log(`✓ wrote SVGs to ${OUT}/ (header, infra, delivery, stats, blog, oss, certs, stack ×2 themes)`);

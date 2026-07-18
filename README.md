@@ -21,6 +21,11 @@ Off the clock I run a six-node Talos Kubernetes cluster at home, reconciled from
 </picture>
 
 <picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/delivery-dark.svg" />
+  <img alt="GitOps delivery pipeline: git push to GitHub Actions to GHCR to ArgoCD to Talos, with the live last deploy" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/delivery.svg" width="100%" />
+</picture>
+
+<picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/stats-dark.svg" />
   <img alt="GitHub activity: public repos, stars, commits, followers" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/stats.svg" width="100%" />
 </picture>
@@ -33,6 +38,11 @@ Off the clock I run a six-node Talos Kubernetes cluster at home, reconciled from
 </a>
 
 Read more on the blog: [blog.nordbye.it](https://blog.nordbye.it)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/oss-dark.svg" />
+  <img alt="Open-source merged contributions: traefik, blowfish, ghcertified" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/oss.svg" width="100%" />
+</picture>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/certs-dark.svg" />
