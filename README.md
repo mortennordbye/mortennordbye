@@ -51,7 +51,3 @@ Off the clock I run a six-node Talos Kubernetes cluster at home, reconciled from
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/stack-dark.svg" />
   <img alt="Core stack proficiency" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/stack.svg" width="100%" />
 </picture>
-
----
-
-Portfolio and case studies at [nordbye.it](https://nordbye.it) · Writing at [blog.nordbye.it](https://blog.nordbye.it)
