@@ -1,0 +1,13 @@
+{
+  "name": "mortennordbye-profile",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Generates the brand-matched profile SVGs from the portfolio API + GitHub.",
+  "scripts": {
+    "generate": "node scripts/generate.mjs"
+  },
+  "dependencies": {
+    "simple-icons": "^13.0.0"
+  }
+}

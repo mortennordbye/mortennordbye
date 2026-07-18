@@ -1,0 +1,64 @@
+name: Refresh profile assets
+
+# Renders the brand SVGs (scripts/generate.mjs) and the contribution snake,
+# then pushes them to the `output` branch. The README on main references those
+# raw URLs, so main history stays clean and the cards refresh on a schedule.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/profile.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: profile-assets
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Render brand SVGs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API_BASE: https://nordbye.it
+          GH_USER: ${{ github.repository_owner }}
+        run: node scripts/generate.mjs
+
+      - name: Render contribution snake
+        uses: Platane/snk@v3
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          outputs: |
+            dist/github-snake.svg?palette=github-light
+            dist/github-snake-dark.svg?palette=github-dark&color_snake=#5db7ff&color_dots=#0a1015,#1a3a5c,#3a6ea5,#5db7ff,#8b7dff
+
+      - name: Publish to output branch
+        uses: crazy-max/ghaction-github-pages@v4
+        with:
+          target_branch: output
+          build_dir: dist
+          keep_history: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
