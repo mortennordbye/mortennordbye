@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="254" viewBox="0 0 840 254" role="img">
+  <defs>
+    <style>
+  .reveal{animation:rise .7s cubic-bezier(.2,.7,.3,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .bar{transform-box:fill-box;transform-origin:bottom;animation:grow .9s cubic-bezier(.2,.7,.3,1) both}
+  @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  .skbar{transform-box:fill-box;transform-origin:left;animation:growx 1.1s cubic-bezier(.2,.7,.3,1) both}
+  @keyframes growx{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .shimmer{animation:sweep 3.4s ease-in-out infinite}
+  @keyframes sweep{0%{transform:translateX(-45%)}50%{transform:translateX(45%)}100%{transform:translateX(-45%)}}
+  .pulse{animation:pulse 2.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .draw{stroke-dasharray:4000;stroke-dashoffset:4000;animation:draw 2.4s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .fadein{opacity:0;animation:fadein 1.2s ease-out .5s forwards}
+  @keyframes fadein{to{opacity:1}}</style>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1f6fda"/><stop offset="0.5" stop-color="#6552d8"/><stop offset="1" stop-color="#2a9d94"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/><stop offset="0.5" stop-color="#ffffff" stop-opacity="0.75"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="banner" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef2f7"/><stop offset="0.6" stop-color="#ecf1f7"/><stop offset="1" stop-color="#f6f8fb"/>
+      <animate attributeName="x2" values="1;0.7;1" dur="8s" repeatCount="indefinite"/>
+    </linearGradient>
+    <clipPath id="topclip"><rect x="0" y="0" width="840" height="3"/></clipPath>
+  </defs>
+  <rect x="0.5" y="0.5" width="839" height="253" rx="14" fill="#f6f8fb" stroke="#d6dde7"/>
+  <g clip-path="url(#topclip)">
+         <rect x="0" y="0" width="840" height="3" fill="url(#accent)"/>
+         <rect class="shimmer" x="290" y="0" width="260" height="3" fill="url(#glow)"/>
+       </g>
+  <g class="reveal">
+      <text x="40" y="40" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="11" font-weight="600" fill="#5e6b7c" text-anchor="start" opacity="1">GITHUB ACTIVITY</text>
+      <text x="40" y="86" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="26" font-weight="700" fill="#1f6fda" text-anchor="start" opacity="1">26</text>
+        <text x="40" y="108" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="11" font-weight="600" fill="#5e6b7c" text-anchor="start" opacity="1">PUBLIC REPOS</text><text x="230" y="86" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="26" font-weight="700" fill="#1f6fda" text-anchor="start" opacity="1">207</text>
+        <text x="230" y="108" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="11" font-weight="600" fill="#5e6b7c" text-anchor="start" opacity="1">STARS</text><text x="420" y="86" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="26" font-weight="700" fill="#1f6fda" text-anchor="start" opacity="1">2.6k</text>
+        <text x="420" y="108" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="11" font-weight="600" fill="#5e6b7c" text-anchor="start" opacity="1">COMMITS (1Y)</text><text x="610" y="86" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="26" font-weight="700" fill="#1f6fda" text-anchor="start" opacity="1">14</text>
+        <text x="610" y="108" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="11" font-weight="600" fill="#5e6b7c" text-anchor="start" opacity="1">FOLLOWERS</text>
+      <line x1="40" y1="130" x2="800" y2="130" stroke="#d6dde7"/>
+      <text x="40" y="152" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="11" font-weight="600" fill="#5e6b7c" text-anchor="start" opacity="1">CONTRIBUTIONS · LAST 12 MONTHS</text>
+      <text x="800" y="152" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="12" font-weight="600" fill="#364456" text-anchor="end" opacity="1">6.2k total</text>
+      <defs>
+           <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+             <stop offset="0" stop-color="#1f6fda" stop-opacity="0.34"/>
+             <stop offset="1" stop-color="#1f6fda" stop-opacity="0"/>
+           </linearGradient>
+         </defs>
+         <line x1="40" y1="232" x2="800" y2="232" stroke="#d6dde7"/>
+         <path class="fadein" d="M40,232 L40,229 L55,230 L69,198 L84,227 L98,209 L113,218 L128,231 L142,229 L157,228 L172,223 L186,222 L201,224 L215,231 L230,226 L245,231 L259,228 L274,230 L288,228 L303,211 L318,218 L332,207 L347,205 L362,180 L376,196 L391,192 L405,169 L420,216 L435,188 L449,209 L464,208 L478,200 L493,210 L508,214 L522,218 L537,207 L552,222 L566,204 L581,210 L595,204 L610,219 L625,225 L639,232 L654,205 L668,186 L683,219 L698,186 L712,212 L727,204 L742,214 L756,210 L771,171 L785,166 L800,225 L800,232 Z" fill="url(#area)"/>
+         <polyline class="draw" points="40,229 55,230 69,198 84,227 98,209 113,218 128,231 142,229 157,228 172,223 186,222 201,224 215,231 230,226 245,231 259,228 274,230 288,228 303,211 318,218 332,207 347,205 362,180 376,196 391,192 405,169 420,216 435,188 449,209 464,208 478,200 493,210 508,214 522,218 537,207 552,222 566,204 581,210 595,204 610,219 625,225 639,232 654,205 668,186 683,219 698,186 712,212 727,204 742,214 756,210 771,171 785,166 800,225" fill="none" stroke="url(#accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+         <circle class="pulse" cx="800" cy="225" r="3.5" fill="#2a9d94"/>
+    </g>
+</svg>
