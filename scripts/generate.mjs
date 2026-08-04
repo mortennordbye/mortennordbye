@@ -101,6 +101,35 @@ function emit(base, height, inner, opts) {
   write(`${base}-dark.svg`, card(DARK, height, inner, opts));
 }
 
+// ── nav link badges ─────────────────────────────────────────────────────────
+// GitHub renders markdown links in its own accent blue and strips any CSS from
+// a README, so the only way to get the nav row onto the brand palette is to
+// ship each link as an image. One small SVG per link, each wrapped in its own
+// <a> in the README, so every badge keeps its own href.
+const NAV = [
+  ["nordbye.it", "nav-site"],
+  ["blog.nordbye.it", "nav-blog"],
+  ["Homelab repo", "nav-repo"],
+  ["LinkedIn", "nav-linkedin"],
+  ["Email", "nav-email"],
+];
+
+function navBadges() {
+  for (const [label, base] of NAV) {
+    // Estimated advance width for the sans stack at 13px semibold. Deliberately
+    // generous: a badge that is slightly wide reads fine, one that clips does not.
+    const w = Math.round(label.length * 7.6 + 30);
+    const h = 30;
+    const svg = (t) =>
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}">` +
+      `<rect x="0.75" y="0.75" width="${w - 1.5}" height="${h - 1.5}" rx="3" fill="${t.surface}" stroke="${t.line}"/>` +
+      tspan(w / 2, h / 2 + 4.5, label, { size: 13, weight: 600, fill: t.accent, anchor: "middle" }) +
+      `</svg>`;
+    write(`${base}.svg`, svg(LIGHT));
+    write(`${base}-dark.svg`, svg(DARK));
+  }
+}
+
 // ── data fetch ──────────────────────────────────────────────────────────────
 async function getJSON(path, fallback) {
   try {
@@ -614,5 +643,6 @@ blogCard(blog);
 openSourceCard(oss);
 certsCard(profile);
 stackCard(si);
+navBadges();
 
-console.log(`✓ wrote SVGs to ${OUT}/ (header, infra, delivery, stats, lighthouse, blog, oss, certs, stack ×2 themes)`);
+console.log(`✓ wrote SVGs to ${OUT}/ (header, infra, delivery, stats, lighthouse, blog, oss, certs, stack, 5 nav badges ×2 themes)`);
