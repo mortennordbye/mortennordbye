@@ -9,11 +9,42 @@
   </picture>
 </a>
 
-### [nordbye.it](https://nordbye.it) &nbsp;·&nbsp; [blog.nordbye.it](https://blog.nordbye.it) &nbsp;·&nbsp; [Homelab repo](https://github.com/mortennordbye/Homelab) &nbsp;·&nbsp; [LinkedIn](https://www.linkedin.com/in/morten-victor-nordbye) &nbsp;·&nbsp; [Email](mailto:morten@nordbye.it)
+<p>
+<a href="https://nordbye.it">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-site-dark.svg" />
+    <img alt="nordbye.it" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-site.svg" height="30" />
+  </picture>
+</a>
+<a href="https://blog.nordbye.it">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-blog-dark.svg" />
+    <img alt="blog.nordbye.it" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-blog.svg" height="30" />
+  </picture>
+</a>
+<a href="https://github.com/mortennordbye/Homelab">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-repo-dark.svg" />
+    <img alt="Homelab repo" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-repo.svg" height="30" />
+  </picture>
+</a>
+<a href="https://www.linkedin.com/in/morten-victor-nordbye">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-linkedin-dark.svg" />
+    <img alt="LinkedIn" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-linkedin.svg" height="30" />
+  </picture>
+</a>
+<a href="mailto:morten@nordbye.it">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-email-dark.svg" />
+    <img alt="Email" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-email.svg" height="30" />
+  </picture>
+</a>
+</p>
 
 I build and run automated, secure infrastructure for regulated industries. The work is Azure platforms, Kubernetes on AKS and on-prem Talos, GitOps with ArgoCD, and Terraform-based CI/CD. I'm currently a Cloud Engineer at Orange Business, where I took over architect responsibility on a betting-platform Azure migration and moved roughly 30 microservices onto AKS.
 
-Off the clock I run a six-node Talos Kubernetes cluster at home, reconciled from Git. Nothing on this page is hand-maintained. The cards below regenerate on a schedule from my portfolio API at [nordbye.it](https://nordbye.it), which is the source of truth for my profile, so the cluster status, GitHub stats, and latest posts from [blog.nordbye.it](https://blog.nordbye.it) stay current on their own.
+Off the clock I run a six-node Talos Kubernetes cluster at home, reconciled from Git. Nothing on this page is hand-maintained. The cards below regenerate on a schedule from my portfolio API at nordbye.it, which is the source of truth for my profile, so the cluster status, GitHub stats, and latest posts from blog.nordbye.it stay current on their own.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/infra-dark.svg" />
