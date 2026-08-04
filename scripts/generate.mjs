@@ -16,18 +16,21 @@ const GH_USER = process.env.GH_USER ?? "mortennordbye";
 const TOKEN = process.env.GITHUB_TOKEN ?? "";
 const OUT = process.env.OUT_DIR ?? "dist";
 
-// ── Brand palette (portfolio tokens.css: arctic / aurora) ───────────────────
+// ── Brand palette (portfolio tokens.css: eucalyptus, hue 130) ───────────────
+// Full spec at nordbye.it/brand. One hue at three steps rather than three
+// hues: accent2 and accent3 are lighter steps of accent, not separate colours.
+// Values are solved against their own ground for contrast, not picked by eye.
 const DARK = {
-  bg: "#0a1015", bg2: "#060a0e", surface: "#111923", line: "#2a3849",
-  fg: "#e8eef5", muted: "#b0bccb", faint: "#8898aa",
-  accent: "#5db7ff", accent2: "#8b7dff", accent3: "#58d2c9",
-  ok: "#58d2c9", warn: "#f0b86e", ink: "#03121f",
+  bg: "#0f1410", bg2: "#090c09", surface: "#191f1a", line: "#2a382c",
+  fg: "#e9ebe9", muted: "#a1ada3", faint: "#708373",
+  accent: "#51a45e", accent2: "#8ec798", accent3: "#61b86f",
+  ok: "#51a45e", warn: "#c09955", danger: "#d18c82", ink: "#0f1410",
 };
 const LIGHT = {
-  bg: "#f6f8fb", bg2: "#eef2f7", surface: "#ecf1f7", line: "#d6dde7",
-  fg: "#0d141d", muted: "#364456", faint: "#5e6b7c",
-  accent: "#1f6fda", accent2: "#6552d8", accent3: "#2a9d94",
-  ok: "#2a9d94", warn: "#b9741f", ink: "#ffffff",
+  bg: "#f9fbf9", bg2: "#f0f5f1", surface: "#e7eee8", line: "#d1ddd3",
+  fg: "#1a201b", muted: "#415344", faint: "#5f7963",
+  accent: "#378144", accent2: "#40a551", accent3: "#3d954c",
+  ok: "#378144", warn: "#956b23", danger: "#ca442f", ink: "#ffffff",
 };
 
 const W = 840;
@@ -554,7 +557,7 @@ function lighthouseCard(lh) {
 
   return emit("lighthouse", height, (t) => {
     const scoreColor = (v) =>
-      v == null ? t.faint : v >= 90 ? t.accent3 : v >= 50 ? t.warn : "#e5484d";
+      v == null ? t.faint : v >= 90 ? t.accent3 : v >= 50 ? t.warn : t.danger;
     const x0 = 190, r = 22, C = 2 * Math.PI * r;
     const slot = (W - 40 - x0) / cols.length;
     const colX = (i) => Math.round(x0 + slot * i + slot / 2);
