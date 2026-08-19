@@ -3,7 +3,7 @@
 // Reads (all with graceful fallbacks so a first run never hard-fails):
 //   nordbye.it/api/v1/{profile,infra,blog}   — identity, live cluster, posts
 //   GitHub GraphQL (GITHUB_TOKEN)             — repos, stars, commits, followers
-//   GitHub REST stargazers (star+json)         — star history for the Homelab repo
+//   GitHub GraphQL stargazers                — star history for the Homelab repo
 //
 // Writes dark + light SVGs into dist/, which the workflow pushes to the
 // `output` branch; the README references them via <picture>.
@@ -369,25 +369,45 @@ function statsCard(stats) {
 }
 
 // ── star history ────────────────────────────────────────────────────────────
-// star-history.com stopped rendering, so the chart is drawn here instead. The
-// stargazers endpoint only returns starred_at under the star+json media type;
-// pages come back oldest-first, 100 at a time.
+// star-history.com stopped rendering, so the chart is drawn here instead.
+// GraphQL rather than REST: the REST stargazers listing answers 403 to the
+// workflow's GITHUB_TOKEN, and starredAt costs one field here instead of a
+// whole user payload per star.
 const STAR_REPO = `${GH_USER}/homelab`;
 
 async function starHistory() {
-  const auth = TOKEN ? { authorization: `bearer ${TOKEN}` } : {};
+  if (!TOKEN) {
+    console.warn("! no GITHUB_TOKEN — star history skipped");
+    return null;
+  }
+  const [owner, name] = STAR_REPO.split("/");
+  const query = `query($owner:String!,$name:String!,$cursor:String){
+    repository(owner:$owner,name:$name){
+      stargazers(first:100, after:$cursor, orderBy:{field:STARRED_AT, direction:ASC}){
+        pageInfo{hasNextPage endCursor}
+        edges{starredAt}
+      }
+    }
+  }`;
+
   const times = [];
   try {
-    for (let page = 1; page <= 40; page++) {
-      const res = await fetch(`https://api.github.com/repos/${STAR_REPO}/stargazers?per_page=100&page=${page}`, {
-        headers: { ...auth, accept: "application/vnd.github.star+json" },
+    let cursor = null;
+    for (let page = 1; page <= 60; page++) {
+      const res = await fetch("https://api.github.com/graphql", {
+        method: "POST",
+        headers: { authorization: `bearer ${TOKEN}`, "content-type": "application/json" },
+        body: JSON.stringify({ query, variables: { owner, name, cursor } }),
         signal: AbortSignal.timeout(15000),
       });
-      if (!res.ok) throw new Error(`${res.status}`);
-      const batch = await res.json();
-      if (!Array.isArray(batch) || !batch.length) break;
-      for (const s of batch) if (s.starred_at) times.push(new Date(s.starred_at).getTime());
-      if (batch.length < 100) break;
+      const body = await res.text();
+      let j = null;
+      try { j = JSON.parse(body); } catch { /* non-JSON error page */ }
+      const sg = j?.data?.repository?.stargazers;
+      if (!sg) throw new Error(`${res.status} ${body.slice(0, 200)}`);
+      for (const e of sg.edges) times.push(new Date(e.starredAt).getTime());
+      if (!sg.pageInfo.hasNextPage) break;
+      cursor = sg.pageInfo.endCursor;
     }
   } catch (e) {
     console.warn(`! stargazers failed (${e.message}) — star history skipped`);
