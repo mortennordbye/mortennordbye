@@ -3,7 +3,7 @@
 // Reads (all with graceful fallbacks so a first run never hard-fails):
 //   nordbye.it/api/v1/{profile,infra,blog}   — identity, live cluster, posts
 //   GitHub GraphQL (GITHUB_TOKEN)             — repos, stars, commits, followers
-//   GitHub GraphQL stargazers                — star history for the Homelab repo
+//   Homelab stars-data branch                — star history for the Homelab repo
 //
 // Writes dark + light SVGs into dist/, which the workflow pushes to the
 // `output` branch; the README references them via <picture>.
@@ -369,82 +369,50 @@ function statsCard(stats) {
 }
 
 // ── star history ────────────────────────────────────────────────────────────
-// star-history.com stopped rendering, so the chart is drawn here instead.
-// GraphQL rather than REST: the REST stargazers listing answers 403 to the
-// workflow's GITHUB_TOKEN, and starredAt costs one field here instead of a
-// whole user payload per star.
+// star-history.com stopped rendering, so the chart is drawn here instead. The
+// data comes from the Homelab repo, which publishes its own stargazer days to
+// a data branch: this workflow's token is an installation token scoped to this
+// repo, and the stargazer listing answers "Resource not accessible by
+// integration" for any other repo, over both REST and GraphQL. Same hand-off
+// as the Lighthouse card.
 const STAR_REPO = `${GH_USER}/homelab`;
 
 async function starHistory() {
-  if (!TOKEN) {
-    console.warn("! no GITHUB_TOKEN — star history skipped");
-    return null;
-  }
-  const [owner, name] = STAR_REPO.split("/");
-  const query = `query($owner:String!,$name:String!,$cursor:String){
-    repository(owner:$owner,name:$name){
-      stargazers(first:100, after:$cursor, orderBy:{field:STARRED_AT, direction:ASC}){
-        pageInfo{hasNextPage endCursor}
-        edges{starredAt}
-      }
-    }
-  }`;
-
-  const times = [];
+  const url = `https://raw.githubusercontent.com/${STAR_REPO}/stars-data/stars.json`;
   try {
-    let cursor = null;
-    for (let page = 1; page <= 60; page++) {
-      const res = await fetch("https://api.github.com/graphql", {
-        method: "POST",
-        headers: { authorization: `bearer ${TOKEN}`, "content-type": "application/json" },
-        body: JSON.stringify({ query, variables: { owner, name, cursor } }),
-        signal: AbortSignal.timeout(15000),
-      });
-      const body = await res.text();
-      let j = null;
-      try { j = JSON.parse(body); } catch { /* non-JSON error page */ }
-      const sg = j?.data?.repository?.stargazers;
-      if (!sg) throw new Error(`${res.status} ${body.slice(0, 200)}`);
-      for (const e of sg.edges) times.push(new Date(e.starredAt).getTime());
-      if (!sg.pageInfo.hasNextPage) break;
-      cursor = sg.pageInfo.endCursor;
-    }
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`${res.status}`);
+    const j = await res.json();
+    const days = Object.entries(j?.days ?? {}).sort(([a], [b]) => a.localeCompare(b));
+    if (!days.length) throw new Error("no days");
+    return { total: j.total ?? days.reduce((a, [, n]) => a + n, 0), days };
   } catch (e) {
-    console.warn(`! stargazers failed (${e.message}) — star history skipped`);
+    console.warn(`! stars.json failed (${e.message}) — star history skipped`);
     return null;
   }
-  if (!times.length) return null;
-  times.sort((a, b) => a - b);
-  return times;
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-function starsCard(times) {
+function starsCard(data) {
   const now = Date.now();
   const day = 86400000;
-  const total = times?.length ?? 0;
-  const since = (d) => times.filter((t) => t >= now - d * day).length;
-
-  // busiest single UTC day, for the fourth tile
-  let peak = { n: 0, at: null };
-  if (total) {
-    const byDay = new Map();
-    for (const t of times) {
-      const k = new Date(t).toISOString().slice(0, 10);
-      byDay.set(k, (byDay.get(k) ?? 0) + 1);
-    }
-    for (const [k, n] of byDay) if (n > peak.n) peak = { n, at: k };
-  }
-  const peakLabel = peak.at
-    ? `peak day · ${Number(peak.at.slice(8, 10))} ${MONTHS[Number(peak.at.slice(5, 7)) - 1]}`
+  const total = data?.total ?? 0;
+  const days = data?.days ?? [];
+  const since = (n) => {
+    const cutoff = new Date(now - n * day).toISOString().slice(0, 10);
+    return days.reduce((a, [d, c]) => (d >= cutoff ? a + c : a), 0);
+  };
+  const peak = days.reduce((best, e) => (e[1] > best[1] ? e : best), ["", 0]);
+  const peakLabel = peak[0]
+    ? `peak day · ${Number(peak[0].slice(8, 10))} ${MONTHS[Number(peak[0].slice(5, 7)) - 1]}`
     : "peak day";
 
   const tiles = [
     ["total stars", `${total || "—"}`],
     ["last 30 days", total ? `+${since(30)}` : "—"],
     ["last 7 days", total ? `+${since(7)}` : "—"],
-    [peakLabel, total ? `${peak.n}` : "—"],
+    [peakLabel, total ? `${peak[1]}` : "—"],
   ];
 
   return emit("stars", 288, (t) => {
@@ -464,18 +432,20 @@ function starsCard(times) {
         ${tspan(x0, base - 20, "star history unavailable", { size: 12, fill: t.faint })}`;
     }
 
-    const t0 = times[0];
+    const t0 = Date.parse(days[0][0]);
     const span = Math.max(now - t0, day);
     const px = (ts) => x0 + ((ts - t0) / span) * chartW;
     const py = (n) => base - (n / total) * chartH;
 
-    // One point per star is exact but grows with the repo; sample to keep the
-    // path small, always keeping the first and last star and the flat run to now.
-    const stride = Math.ceil(times.length / 220);
+    // One point per day with a star, sampled so the path stays small as the
+    // repo ages. The first and last day and the flat run to now always survive.
+    const stride = Math.ceil(days.length / 220);
     const pts = [[x0, base]];
-    for (let i = 0; i < times.length; i++) {
-      if (i % stride === 0 || i === times.length - 1) pts.push([px(times[i]), py(i + 1)]);
-    }
+    let run = 0;
+    days.forEach(([d, c], i) => {
+      run += c;
+      if (i % stride === 0 || i === days.length - 1) pts.push([px(Date.parse(d)), py(run)]);
+    });
     pts.push([x0 + chartW, py(total)]);
     const r = (p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
     const line = pts.map(r).join(" ");
@@ -503,10 +473,7 @@ function starsCard(times) {
       })
       .join("");
 
-    const fmtDate = (ts) => {
-      const d = new Date(ts);
-      return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-    };
+    const first = new Date(t0);
 
     return `
       <defs>
@@ -519,7 +486,7 @@ function starsCard(times) {
       ${tilesSvg}
       <line x1="40" y1="130" x2="${W - 40}" y2="130" stroke="${t.line}"/>
       ${eyebrow(40, 152, "cumulative stars", t)}
-      ${tspan(W - 40, 152, `${fmtDate(t0)} → today`, { size: 12, weight: 600, fill: t.muted, font: MONO, anchor: "end" })}
+      ${tspan(W - 40, 152, `${MONTHS[first.getUTCMonth()]} ${first.getUTCFullYear()} → today`, { size: 12, weight: 600, fill: t.muted, font: MONO, anchor: "end" })}
       ${axis}
       <line x1="${x0}" y1="${base}" x2="${x0 + chartW}" y2="${base}" stroke="${t.line}"/>
       <path class="fadein" d="${area}" fill="url(#area)"/>
