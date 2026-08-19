@@ -3,7 +3,6 @@
 // Reads (all with graceful fallbacks so a first run never hard-fails):
 //   nordbye.it/api/v1/{profile,infra,blog}   — identity, live cluster, posts
 //   GitHub GraphQL (GITHUB_TOKEN)             — repos, stars, commits, followers
-//   Homelab stars-data branch                — star history for the Homelab repo
 //
 // Writes dark + light SVGs into dist/, which the workflow pushes to the
 // `output` branch; the README references them via <picture>.
@@ -368,134 +367,6 @@ function statsCard(stats) {
   });
 }
 
-// ── star history ────────────────────────────────────────────────────────────
-// star-history.com stopped rendering, so the chart is drawn here instead. The
-// data comes from the Homelab repo, which publishes its own stargazer days to
-// a data branch: this workflow's token is an installation token scoped to this
-// repo, and the stargazer listing answers "Resource not accessible by
-// integration" for any other repo, over both REST and GraphQL. Same hand-off
-// as the Lighthouse card.
-const STAR_REPO = `${GH_USER}/homelab`;
-
-async function starHistory() {
-  const url = `https://raw.githubusercontent.com/${STAR_REPO}/stars-data/stars.json`;
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) throw new Error(`${res.status}`);
-    const j = await res.json();
-    const days = Object.entries(j?.days ?? {}).sort(([a], [b]) => a.localeCompare(b));
-    if (!days.length) throw new Error("no days");
-    return { total: j.total ?? days.reduce((a, [, n]) => a + n, 0), days };
-  } catch (e) {
-    console.warn(`! stars.json failed (${e.message}) — star history skipped`);
-    return null;
-  }
-}
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function starsCard(data) {
-  const now = Date.now();
-  const day = 86400000;
-  const total = data?.total ?? 0;
-  const days = data?.days ?? [];
-  const since = (n) => {
-    const cutoff = new Date(now - n * day).toISOString().slice(0, 10);
-    return days.reduce((a, [d, c]) => (d >= cutoff ? a + c : a), 0);
-  };
-  const peak = days.reduce((best, e) => (e[1] > best[1] ? e : best), ["", 0]);
-  const peakLabel = peak[0]
-    ? `peak day · ${Number(peak[0].slice(8, 10))} ${MONTHS[Number(peak[0].slice(5, 7)) - 1]}`
-    : "peak day";
-
-  const tiles = [
-    ["total stars", `${total || "—"}`],
-    ["last 30 days", total ? `+${since(30)}` : "—"],
-    ["last 7 days", total ? `+${since(7)}` : "—"],
-    [peakLabel, total ? `${peak[1]}` : "—"],
-  ];
-
-  return emit("stars", 288, (t) => {
-    const tileW = (W - 80) / tiles.length;
-    const tilesSvg = tiles.map(([label, val], i) => {
-      const x = 40 + i * tileW;
-      return `${tspan(x, 86, val, { size: 26, weight: 700, fill: t.accent, font: MONO })}
-        ${eyebrow(x, 108, label, t)}`;
-    }).join("");
-
-    const x0 = 40, chartW = W - 80, base = 246, chartH = 78;
-    if (!total) {
-      return `
-        ${eyebrow(40, 40, `star history · ${STAR_REPO}`, t)}
-        ${tilesSvg}
-        <line x1="40" y1="130" x2="${W - 40}" y2="130" stroke="${t.line}"/>
-        ${tspan(x0, base - 20, "star history unavailable", { size: 12, fill: t.faint })}`;
-    }
-
-    const t0 = Date.parse(days[0][0]);
-    const span = Math.max(now - t0, day);
-    const px = (ts) => x0 + ((ts - t0) / span) * chartW;
-    const py = (n) => base - (n / total) * chartH;
-
-    // One point per day with a star, sampled so the path stays small as the
-    // repo ages. The first and last day and the flat run to now always survive.
-    const stride = Math.ceil(days.length / 220);
-    const pts = [[x0, base]];
-    let run = 0;
-    days.forEach(([d, c], i) => {
-      run += c;
-      if (i % stride === 0 || i === days.length - 1) pts.push([px(Date.parse(d)), py(run)]);
-    });
-    pts.push([x0 + chartW, py(total)]);
-    const r = (p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
-    const line = pts.map(r).join(" ");
-    const area = `M${r(pts[0])} L${pts.map(r).join(" L")} L${(x0 + chartW).toFixed(1)},${base} Z`;
-    const last = pts.at(-1);
-
-    // Month gridlines, thinned so the labels never collide.
-    const marks = [];
-    let m = new Date(t0);
-    m = Date.UTC(m.getUTCFullYear(), m.getUTCMonth() + 1, 1);
-    while (m < now) {
-      marks.push(m);
-      const d = new Date(m);
-      m = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
-    }
-    const every = Math.ceil(marks.length / 8);
-    const axis = marks
-      .filter((_, i) => i % every === 0)
-      .map((ms) => {
-        const d = new Date(ms);
-        const x = px(ms);
-        const label = d.getUTCMonth() === 0 ? `${MONTHS[0]} ${d.getUTCFullYear()}` : MONTHS[d.getUTCMonth()];
-        return `<line x1="${x.toFixed(1)}" y1="${base - chartH}" x2="${x.toFixed(1)}" y2="${base}" stroke="${t.line}" opacity="0.55"/>
-          ${tspan(x, base + 18, label.toUpperCase(), { size: 10, weight: 600, fill: t.faint, font: MONO, anchor: "middle" })}`;
-      })
-      .join("");
-
-    const first = new Date(t0);
-
-    return `
-      <defs>
-        <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="${t.accent}" stop-opacity="0.34"/>
-          <stop offset="1" stop-color="${t.accent}" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      ${eyebrow(40, 40, `star history · ${STAR_REPO}`, t)}
-      ${tilesSvg}
-      <line x1="40" y1="130" x2="${W - 40}" y2="130" stroke="${t.line}"/>
-      ${eyebrow(40, 152, "cumulative stars", t)}
-      ${tspan(W - 40, 152, `${MONTHS[first.getUTCMonth()]} ${first.getUTCFullYear()} → today`, { size: 12, weight: 600, fill: t.muted, font: MONO, anchor: "end" })}
-      ${axis}
-      <line x1="${x0}" y1="${base}" x2="${x0 + chartW}" y2="${base}" stroke="${t.line}"/>
-      <path class="fadein" d="${area}" fill="url(#area)"/>
-      <polyline class="draw" points="${line}" fill="none" stroke="url(#accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-      <circle class="pulse" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.5" fill="${t.accent3}"/>
-    `;
-  });
-}
-
 function chipsRow(items, t, x0, y, { fill, stroke, textFill, size = 12, padX = 12, gap = 8, maxW = W - 80 }) {
   let x = x0, row = y;
   const out = [];
@@ -754,12 +625,11 @@ function lighthouseCard(lh) {
 mkdirSync(OUT, { recursive: true });
 
 const si = await loadSI();
-const [profile, infra, blog, stats, stars, oss, lighthouse] = await Promise.all([
+const [profile, infra, blog, stats, oss, lighthouse] = await Promise.all([
   getJSON("/api/v1/profile", { name: "Morten Victor Nordbye" }),
   getJSON("/api/v1/infra", { source: "snapshot", nodes: { ready: 6, total: 6 } }),
   getJSON("/api/v1/blog", { posts: [] }),
   ghStats(),
-  starHistory(),
   ossRepos(),
   getLighthouse(),
 ]);
@@ -768,7 +638,6 @@ headerCard(profile);
 infraCard(infra);
 deliveryCard(infra, si);
 statsCard(stats);
-starsCard(stars);
 lighthouseCard(lighthouse);
 blogCard(blog);
 openSourceCard(oss);
@@ -776,4 +645,4 @@ certsCard(profile);
 stackCard(si);
 navBadges();
 
-console.log(`✓ wrote SVGs to ${OUT}/ (header, infra, delivery, stats, stars, lighthouse, blog, oss, certs, stack, 5 nav badges ×2 themes)`);
+console.log(`✓ wrote SVGs to ${OUT}/ (header, infra, delivery, stats, lighthouse, blog, oss, certs, stack, 5 nav badges ×2 themes)`);
