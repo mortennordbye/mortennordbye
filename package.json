@@ -8,6 +8,7 @@
     "generate": "node scripts/generate.mjs"
   },
   "dependencies": {
-    "simple-icons": "^13.0.0"
+    "simple-icons": "^13.0.0",
+    "subset-font": "^2.9.0"
   }
 }

@@ -15,6 +15,8 @@ on:
       - main
     paths:
       - "scripts/**"
+      - "assets/**"
+      - "README.template.md"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/profile.yml"
@@ -56,3 +58,11 @@ jobs:
           keep_history: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # After the publish, so the images a new README points at already exist.
+      - name: Commit README links
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet || { git commit -m "profile: refresh README links"; git push; }
