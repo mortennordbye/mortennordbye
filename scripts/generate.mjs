@@ -139,16 +139,21 @@ function emit(base, height, inner) {
 }
 
 // ── the panel ───────────────────────────────────────────────────────────────
-// Everything below the prose is one panel cut into slices. Each slice is its
-// own image floated left (align="left"), which GitHub stacks flush where inline
-// images would leave a gap, so a slice can carry its own link and still read as
-// part of one box. Widths are shares of W, so every slice scales by the same
-// factor and the seams line up.
+// Everything below the prose is one panel cut into slices, each its own image
+// so it can carry its own link. They are inline images with align="top" (no
+// descender gap), no whitespace between them, and a <br> closing every row.
+// Not align="left": GitHub pads floated images 20px, which breaks every row.
+// Widths are shares of W, floored so a row can never round past 100% and wrap.
+// A row must be at least MIN_ROW tall: shorter than GitHub's 24px line on a
+// phone-width README and the line box pads it out, leaving a gap.
 const RAW = `https://raw.githubusercontent.com/${GH_USER}/${GH_USER}/output`;
 const link = (href, inner) => `<a href="${esc(href)}">${inner}</a>`;
 const HOMELAB = "https://github.com/mortennordbye/Homelab";
 const PANEL = [];
 const R = 10;
+const MIN_ROW = 62;
+const pct = (w) => `${Math.floor((w / W) * 1e6) / 1e4}%`;
+const endRow = () => PANEL.push("<br>");
 
 /** Ground plus only the edges of the panel this slice sits on. */
 function frame(w, h, { l = true, r = true, top = false, bottom = false }) {
@@ -175,18 +180,18 @@ function part(name, w, h, inner, { href = null, alt = "", defs = "", delay = 0, 
   ${divide ? `<line x1="40" y1="0.5" x2="${W - 40}" y2="0.5" stroke="${T.line}"/>` : ""}
   <g class="reveal" style="animation-delay:${delay}ms">${inner}</g>
 </svg>`);
-  const tag = `<img src="${RAW}/${name}.svg" alt="${esc(alt)}" width="${((w / W) * 100).toFixed(4)}%" align="left" />`;
+  const tag = `<img src="${RAW}/${name}.svg" alt="${esc(alt)}" width="${pct(w)}" align="top" />`;
   PANEL.push(href ? link(href, tag) : tag);
+  if (w === W) endRow();
 }
 
 /**
  * A section drawn once at full width and cut into cells, each an image of its
  * own window (viewBox) onto the same drawing, so every cell can open its own
  * page. `bands` run top to bottom and their heights must sum to `h`; each band
- * is one full-width cell or a row of cells whose widths sum to W. Two split
- * bands in a row need a thin full-width band between them, for the same
- * float reason as the cert rows. `inner` may be a function of the cell's
- * window, to leave out what that cell cannot show.
+ * is one full-width cell or a row of cells whose widths sum to W, and at least
+ * MIN_ROW tall. `inner` may be a function of the cell's window, to leave out
+ * what that cell cannot show.
  */
 function cut(name, h, inner, bands, { defs = "", delay = 0, divide = false, ...edges } = {}) {
   const body = (win) => `${frame(W, h, edges)}
@@ -201,10 +206,12 @@ function cut(name, h, inner, bands, { defs = "", delay = 0, divide = false, ...e
   <defs><style>${STYLE}</style>${RULE}${defs}</defs>
   ${body({ x, y, w: c.w, h: band.h })}
 </svg>`);
-      const tag = `<img src="${RAW}/${id}.svg" alt="${esc(c.alt ?? "")}" width="${((c.w / W) * 100).toFixed(4)}%" align="left" />`;
+      const tag = `<img src="${RAW}/${id}.svg" alt="${esc(c.alt ?? "")}" width="${pct(c.w)}" align="top" />`;
       PANEL.push(c.href ? link(c.href, tag) : tag);
       x += c.w;
     }
+    if (band.h < MIN_ROW) throw new Error(`${name}: a ${band.h}-unit band is under MIN_ROW`);
+    endRow();
     y += band.h;
   }
   if (y !== h) throw new Error(`${name}: bands sum to ${y}, not ${h}`);
@@ -401,8 +408,7 @@ function infraCard(infra) {
     ${label(W - 40, 166, "cert renews in", { anchor: "end" })}
     ${tspan(W - 40, 196, certDays == null ? "—" : `${certDays} days`, { size: 22, fill: T.fg, anchor: "end" })}
   `, [
-    { h: 58, href: HOMELAB, alt: "Homelab, Genesis cluster: live status" },
-    { h: 82, cells: [
+    { h: 140, cells: [
       { w: 220, href: `${HOMELAB}/tree/main/terraform/proxmox/hyper-cluster/k8s`, alt: `${nodes.ready} of ${nodes.total} nodes ready` },
       { w: 190, href: `${HOMELAB}/tree/main/k8s/talos/infra/argocd`, alt: `ArgoCD ${sync}, ${health}` },
       { w: 190, href: `${HOMELAB}/tree/main/k8s/talos`, alt: `Kubernetes ${k8s}` },
@@ -460,6 +466,7 @@ async function blogCard(blog) {
       defs: `${PAPER}<clipPath id="corner"><rect x="${mat}" y="${mat}" width="${imgW}" height="${imgH}" rx="4"/></clipPath>`,
     });
   }
+  endRow();
 }
 
 function statsCard(stats) {
@@ -515,8 +522,7 @@ function statsCard(stats) {
     ${tspan(W - 40, 170, `${fmt(stats?.contributions)} total`, { size: 11.5, fill: T.fg2, font: MONO, anchor: "end" })}
     ${graph}
   `, [
-    { h: 58, href: `https://github.com/${GH_USER}`, alt: "GitHub activity" },
-    { h: 82, cells: [
+    { h: 140, cells: [
       { w: 220, href: `https://github.com/${GH_USER}?tab=repositories`, alt: `${fmt(stats?.repos)} public repos` },
       { w: 190, href: `https://github.com/${GH_USER}?tab=repositories&sort=stargazers`, alt: `${fmt(stats?.stars)} stars` },
       { w: 190, href: `https://github.com/${GH_USER}`, alt: `${fmt(stats?.commits)} commits in the last year` },
@@ -597,9 +603,7 @@ function certHref(c) {
 
 // Framed certificates stood in rows, as on the shelf in the room: five to a
 // row, and a part-filled last row fills from the left with blank slices
-// holding the panel together. A full-width spacer closes every row: tiles of
-// different widths round to slightly different heights, and without it the
-// next row's first tile floats up into the gap beside the shortest one.
+// holding the panel together.
 function certsCard(profile, badges, si) {
   const certs = profile.certifications ?? [];
   const cols = 5, pad = 40, gap = 14, cw = (W - 2 * pad - (cols - 1) * gap) / cols, ch = 196, cx = cw / 2;
@@ -611,7 +615,7 @@ function certsCard(profile, badges, si) {
   for (let i = 0; i < rows * cols; i++) {
     const c = certs[i], col = i % cols;
     const lx = col === 0 ? pad : gap / 2, w = lx + cw + (col === cols - 1 ? pad : gap / 2);
-    const h = gap + ch;
+    const h = gap + ch + (Math.floor(i / cols) === rows - 1 ? 16 : 0);
     const edges = { l: col === 0, r: col === cols - 1 };
     if (!c) { part(`cert-${i + 1}`, w, h, "", { ...edges, href: resume }); rowEnd(i); continue; }
     const title = c.title.replace(/^Microsoft Certified:\s*/, "").replace(/\s+Certification$/, "");
@@ -633,9 +637,7 @@ function certsCard(profile, badges, si) {
   }
 
   function rowEnd(i) {
-    if (i % cols !== cols - 1) return;
-    const r = Math.floor(i / cols);
-    part(`certs-row-${r + 1}`, W, r === rows - 1 ? 16 : 1, "", { href: resume });
+    if (i % cols === cols - 1) endRow();
   }
 }
 
@@ -695,18 +697,17 @@ function stackCard(si) {
       : `<rect x="${x}" y="${y - iconBox + 3}" width="${iconBox}" height="${iconBox}" rx="3" fill="none" stroke="${T.copper}"/>`;
     return icon + tspan(x + iconBox + 9, y, it.text, { size: 15, fill: T.fg });
   }).join("");
-  // One cell per tool. Rows are rowH apart from y=64, each followed by a
-  // one-unit spacer; the last row runs to the bottom of the section.
-  const edge = colW + 40, height = top + (rows - 1) * rowH + 34;
+  // One cell per tool. The first row also carries the label; the last runs to
+  // the bottom of the section.
+  const edge = colW + 40, height = top + (rows - 1) * rowH + 36;
+  const first = top + rowH - 26;
   const rowBands = Array.from({ length: rows }, (_, r) => ({
-    h: r === rows - 1 ? height - 64 - (rows - 1) * rowH : rowH - 1,
+    h: r === 0 ? first : r === rows - 1 ? height - first - (rows - 2) * rowH : rowH,
     cells: items.slice(r * cols, (r + 1) * cols).map((it, k, row) => ({
       w: k === 0 || k === row.length - 1 ? edge : colW, href: it.href, alt: it.text,
     })),
   }));
-  const bands = [{ h: 64, href: HOMELAB, alt: "Core stack" }];
-  rowBands.forEach((b, r) => { if (r) bands.push({ h: 1, href: HOMELAB }); bands.push(b); });
-  cut("stack", height, (win) => `${eyebrow(40, 36, "core stack")}${parts(win)}`, bands,
+  cut("stack", height, (win) => `${eyebrow(40, 36, "core stack")}${parts(win)}`, rowBands,
     { divide: true, bottom: true });
 }
 
@@ -746,15 +747,13 @@ function deliveryCard(infra, si) {
     <line x1="40" y1="160" x2="${W - 40}" y2="160" stroke="${T.line}"/>
     ${tspan(40, 180, deploy, { size: 11.5, fill: T.fg2, font: MONO })}
   `, [
-    { h: 58, href: `${HOMELAB}/actions`, alt: "GitOps delivery pipeline" },
-    { h: 92, cells: [
+    { h: 196, cells: [
       { w: 150, href: `${HOMELAB}/commits/main`, alt: "git push" },
       { w: 180, href: `${HOMELAB}/actions`, alt: "GitHub Actions" },
       { w: 180, href: `https://github.com/${GH_USER}?tab=packages`, alt: "GHCR" },
       { w: 180, href: `${HOMELAB}/tree/main/k8s/talos/infra/argocd`, alt: "ArgoCD" },
       { w: 150, href: `${HOMELAB}/tree/main/terraform/proxmox/hyper-cluster/k8s`, alt: "Talos" },
     ] },
-    { h: 46, href: `${HOMELAB}/actions`, alt: deploy },
   ], { divide: true });
 }
 
@@ -785,14 +784,14 @@ function openSourceCard(oss) {
   const allPrs = `https://github.com/search?type=pullrequests&q=${encodeURIComponent(`is:pr is:merged author:${GH_USER} -user:${GH_USER}`)}`;
   groupHead("oss", "open source · merged contributions", "", { href: allPrs, alt: "Open source, merged contributions" });
   oss.forEach((o, i) => {
-    const last = i === oss.length - 1, h = last ? 70 : 54;
+    const last = i === oss.length - 1, h = last ? 78 : MIN_ROW;
     const prs = `https://github.com/${o.repo}/pulls?q=${encodeURIComponent(`is:pr is:merged author:${GH_USER}`)}`;
     part(`oss-${i + 1}`, W, h, `
-      ${tspan(40, 24, o.repo, { size: 14, fill: T.copper, font: MONO })}
-      ${tspan(40, 43, o.note, { size: 14, fill: T.fg2 })}
-      <g transform="translate(${W - 112},${18})"><path d="${STAR}" fill="${T.brassHi}"/></g>
-      ${tspan(W - 40, 33, fmt(o.stars), { size: 18, fill: T.fg, anchor: "end" })}
-      ${last ? "" : `<line x1="40" y1="53.5" x2="${W - 40}" y2="53.5" stroke="${T.line}"/>`}`,
+      ${tspan(40, 28, o.repo, { size: 14, fill: T.copper, font: MONO })}
+      ${tspan(40, 47, o.note, { size: 14, fill: T.fg2 })}
+      <g transform="translate(${W - 112},${22})"><path d="${STAR}" fill="${T.brassHi}"/></g>
+      ${tspan(W - 40, 37, fmt(o.stars), { size: 18, fill: T.fg, anchor: "end" })}
+      ${last ? "" : `<line x1="40" y1="${MIN_ROW - 0.5}" x2="${W - 40}" y2="${MIN_ROW - 0.5}" stroke="${T.line}"/>`}`,
       { href: prs, alt: `${o.repo}: ${o.note}`, delay: 100 + i * 100 });
   });
 }
@@ -896,10 +895,11 @@ stackCard(si);
 navBadges();
 await flush();
 
-// README.md is README.template.md with <!-- panel --> replaced by the slices.
-// The clear ends the floats. The workflow commits it only when it changed.
+// README.md is README.template.md with <!-- panel --> replaced by the slices,
+// on one line: any whitespace between them would show as a gap. The workflow
+// commits it only when it changed.
 const template = readFileSync(new URL("../README.template.md", import.meta.url), "utf8");
 writeFileSync(new URL("../README.md", import.meta.url),
-  template.replace("<!-- panel -->", `${PANEL.join("\n")}\n<br clear="both" />`));
+  template.replace("<!-- panel -->", `<p>${PANEL.join("")}</p>`));
 
 console.log(`✓ wrote SVGs to ${OUT}/`);
