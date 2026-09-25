@@ -3,26 +3,14 @@
      README.md is written from this file: edit prose here, never in README.md.
      The panel marker becomes the slices of one box, each linked where it opens something. -->
 
-<a href="https://nordbye.it">
-  <img alt="Morten Victor Nordbye — Cloud Engineer & Architect, Oslo" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/header.svg" width="100%" />
-</a>
+<a href="https://nordbye.it"><img alt="Morten Victor Nordbye — Cloud Engineer & Architect, Oslo" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/header.svg" width="100%" /></a>
 
 <p>
-<a href="https://nordbye.it">
-  <img alt="nordbye.it" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-site.svg" height="30" />
-</a>
-<a href="https://blog.nordbye.it">
-  <img alt="blog.nordbye.it" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-blog.svg" height="30" />
-</a>
-<a href="https://github.com/mortennordbye/Homelab">
-  <img alt="Homelab repo" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-repo.svg" height="30" />
-</a>
-<a href="https://www.linkedin.com/in/morten-victor-nordbye">
-  <img alt="LinkedIn" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-linkedin.svg" height="30" />
-</a>
-<a href="mailto:morten@nordbye.it">
-  <img alt="Email" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-email.svg" height="30" />
-</a>
+<a href="https://nordbye.it"><img alt="nordbye.it" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-site.svg" height="30" /></a>
+<a href="https://blog.nordbye.it"><img alt="blog.nordbye.it" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-blog.svg" height="30" /></a>
+<a href="https://github.com/mortennordbye/Homelab"><img alt="Homelab repo" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-repo.svg" height="30" /></a>
+<a href="https://www.linkedin.com/in/morten-victor-nordbye"><img alt="LinkedIn" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-linkedin.svg" height="30" /></a>
+<a href="mailto:morten@nordbye.it"><img alt="Email" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-email.svg" height="30" /></a>
 </p>
 
 I build and run automated, secure infrastructure for regulated industries. The work is Azure platforms, Kubernetes on AKS and on-prem Talos, GitOps with ArgoCD, and Terraform-based CI/CD. I'm currently a Cloud Engineer at Orange Business, where I took over architect responsibility on a betting-platform Azure migration and moved roughly 30 microservices onto AKS.
