@@ -3,7 +3,7 @@
      README.md is written from this file: edit prose here, never in README.md.
      The panel marker becomes the slices of one box, each linked where it opens something. -->
 
-<a href="https://nordbye.it"><img alt="Morten Victor Nordbye — Cloud Engineer & Architect, Oslo" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/header.svg" width="100%" /></a>
+<a href="https://nordbye.it"><img alt="Morten Victor Nordbye — Senior Platform Engineer, Oslo" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/header.svg" width="100%" /></a>
 
 <p>
 <a href="https://nordbye.it"><img alt="nordbye.it" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-site.svg" height="30" /></a>
@@ -13,7 +13,7 @@
 <a href="mailto:morten@nordbye.it"><img alt="Email" src="https://raw.githubusercontent.com/mortennordbye/mortennordbye/output/nav-email.svg" height="30" /></a>
 </p>
 
-I build and run automated, secure infrastructure for regulated industries. The work is Azure platforms, Kubernetes on AKS and on-prem Talos, GitOps with ArgoCD, and Terraform-based CI/CD. I'm currently a Cloud Engineer at Orange Business, where I took over architect responsibility on a betting-platform Azure migration and moved roughly 30 microservices onto AKS.
+I build and run automated, secure infrastructure for regulated industries. The work is Azure platforms, Kubernetes on AKS and on-prem Talos, GitOps with ArgoCD, and Terraform-based CI/CD. I'm a Senior Platform Engineer at Nimtech. Before that, at Orange Business, I took over architect responsibility on a betting-platform Azure migration and moved roughly 30 microservices onto AKS.
 
 Off the clock I run a six-node Talos Kubernetes cluster at home, reconciled from Git. Nothing on this page is hand-maintained. The cards below regenerate on a schedule from my portfolio API at nordbye.it, which is the source of truth for my profile, so the cluster status, GitHub stats, and latest posts from blog.nordbye.it stay current on their own.
 

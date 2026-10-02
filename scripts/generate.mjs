@@ -357,7 +357,7 @@ const fmt = (n) => (n == null ? "—" : n >= 1000 ? `${(n / 1000).toFixed(1)}k` 
 
 // ── cards ─────────────────────────────────────────────────────────────────
 function headerCard(profile) {
-  const role = profile.role ?? "Cloud Engineer & Architect";
+  const role = profile.role ?? "Senior Platform Engineer";
   const loc = profile.location ?? "Oslo, Norway";
   return emit("header", 168, `
     ${tspan(40, 44, "NORDBYE.IT  ·  THE STUDY", { size: 11, fill: T.copper, font: MONO, spacing: 1.6 })}
