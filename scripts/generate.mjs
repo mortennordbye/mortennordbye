@@ -534,7 +534,7 @@ function statsCard(stats) {
 
 // Badge per certificate, as issued by Microsoft Learn and Credly. Tested in
 // order, so the GitHub titles resolve before the Microsoft tiers. A cert with
-// no badge (LFS458 is a course) gets the Linux Foundation mark if it is theirs.
+// no badge (LFS458 is a course, Anthropic issues none) gets its issuer's mark.
 const BADGES = [
   [/advanced security/i, "github-advanced-security"],
   [/copilot/i, "github-copilot"],
@@ -608,7 +608,10 @@ function certsCard(profile, badges, si) {
   const certs = profile.certifications ?? [];
   const cols = 5, pad = 40, gap = 14, cw = (W - 2 * pad - (cols - 1) * gap) / cols, ch = 196, cx = cw / 2;
   const rows = Math.ceil(certs.length / cols);
-  const lf = iconFor(si, "linuxfoundation");
+  const issuerMark = (issuer = "") =>
+    /linux foundation/i.test(issuer) ? iconFor(si, "linuxfoundation")
+      : /anthropic/i.test(issuer) ? iconFor(si, "claude")
+      : null;
 
   const resume = "https://nordbye.it/#resume";
   groupHead("certs", "certifications", `${certs.length} held`, { href: resume, alt: "Certifications" });
@@ -619,10 +622,11 @@ function certsCard(profile, badges, si) {
     const edges = { l: col === 0, r: col === cols - 1 };
     if (!c) { part(`cert-${i + 1}`, w, h, "", { ...edges, href: resume }); rowEnd(i); continue; }
     const title = c.title.replace(/^Microsoft Certified:\s*/, "").replace(/\s+Certification$/, "");
+    const im = !badges[i] && issuerMark(c.issuer);
     const mark = badges[i]
       ? `<image x="${cx - 38}" y="16" width="76" height="76" href="${badges[i]}"/>`
-      : lf && /linux foundation/i.test(c.issuer ?? "")
-        ? `<g transform="translate(${cx - 26},28) scale(${52 / 24})"><path d="${lf.path}" fill="${T.ink2}"/></g>`
+      : im
+        ? `<g transform="translate(${cx - 26},28) scale(${52 / 24})"><path d="${im.path}" fill="${T.ink2}"/></g>`
         : "";
     const lines = wrap(title, 17).map((l, k) =>
       tspan(cx, 118 + k * 16, l, { size: 13.5, fill: T.ink, anchor: "middle" })).join("");
