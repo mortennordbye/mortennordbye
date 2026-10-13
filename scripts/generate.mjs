@@ -590,16 +590,8 @@ function wrap(text, maxChars) {
   return lines.slice(0, 3);
 }
 
-// Where a tile opens: the Microsoft Learn share page for anything with a
-// credential ID, the scanned certificate on nordbye.it for the two Linux
-// Foundation ones, the resume otherwise.
-const LEARN_SHARE = "https://learn.microsoft.com/api/credentials/share/en-us/MortenVictorNordbye-8246";
-const CERT_PDFS = [[/\bCKA\b/, "CKA"], [/\bLFS458\b/, "LFS458"]];
-function certHref(c) {
-  if (c.credentialId) return `${LEARN_SHARE}/${c.credentialId}`;
-  const pdf = CERT_PDFS.find(([re]) => re.test(c.title))?.[1];
-  return pdf ? `https://nordbye.it/pdf/${pdf}.pdf` : "https://nordbye.it/#resume";
-}
+// Where a tile opens: the cert's own Credly or Learn page, the resume otherwise.
+const certHref = (c) => c.url ?? "https://nordbye.it/#resume";
 
 // Framed certificates stood in rows, as on the shelf in the room: five to a
 // row, and a part-filled last row fills from the left with blank slices
